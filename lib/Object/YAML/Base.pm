@@ -8,8 +8,6 @@ use Carp qw(croak);
 require Exporter;
 require Exporter::Heavy;
 
-our %pkg_info = ();
-our %pkg_indexes = ();
 $|++;
 
 my $pluralize = sub {
@@ -25,9 +23,36 @@ my $pluralize = sub {
     return $noun . 's';
 };
 
-sub yaml_objs {
-    my $class = shift;
+sub oy_pkg {
+    my $pkg = shift;
+    my %set = @_;
+    no strict 'refs';
+    no warnings 'uninitialized';
+    unless (scalar keys %{$pkg.'::oy_pkg'}) { %{$pkg.'::oy_pkg'} = (); }
+    $pkg_info = \%{$pkg.'::oy_pkg'};
+    $pkg_info->{$_} = $set{$_} foreach keys %set;
+    return $pkg_info;
 }
+
+sub oy_cache {
+    my $pkg = shift;
+    my $cache = $pkg->oy_pkg()->{cache} || [];
+    $pkg->oy_pkg()->{cache} = $cache;
+    return wantarray ? @$cache : $cache;
+}
+
+sub oy_index {
+    my $pkg = shift;
+    my $index = shift;
+    my $index_h = $pkg->oy_pkg()->{indexes}{$index} || {};
+    $pkg->oy_pkg()->{indexes}{$index} = $index_h;
+    return wantarray ? %$index_h : $index_h;
+}
+
+sub oy_index_get {
+}
+
+
 
 sub import {
 
@@ -40,9 +65,10 @@ sub import {
         or croak "Must be called at import time";
 
     my $base = 0;
+    my $pkg_info = $caller_pkg->oy_pkg();
     for ( my $i = 0; $i <= $#_; $i++ ) {
         if (ref($_[$i]) eq 'HASH' ) {
-            $pkg_info{$caller_pkg} = splice @_, $i, 1;
+            oy_pkg( $caller_pkg, %{ splice @_, $i, 1 }  );
             $i--;
             $base = 1;
         }
@@ -73,7 +99,7 @@ sub AUTOLOAD {
         return eval { $context->{$subname} };
     }
     elsif ( $context =~ m/^(\w+|::)+$/ ) {
-        my $p = $pkg_info{$context};
+        my $p = $context->oy_pkg;
 #print Dumper(\%pkg_info);
 #print Dumper($p);
         if (defined $value) { $p->{$subname} = $value; }
