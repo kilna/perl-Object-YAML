@@ -9,6 +9,7 @@ use Test::More;
 
 use_ok( 'TestGlob' );
 
-print "$_\n" foreach TestGlob->yaml_files;
+print "$_\n" foreach TestGlob->oy_files;
 
 done_testing();
+

@@ -29,7 +29,7 @@ sub oy_pkg {
     no strict 'refs';
     no warnings 'uninitialized';
     unless (scalar keys %{$pkg.'::oy_pkg'}) { %{$pkg.'::oy_pkg'} = (); }
-    $pkg_info = \%{$pkg.'::oy_pkg'};
+    my $pkg_info = \%{$pkg.'::oy_pkg'};
     $pkg_info->{$_} = $set{$_} foreach keys %set;
     return $pkg_info;
 }
@@ -65,7 +65,7 @@ sub import {
         or croak "Must be called at import time";
 
     my $base = 0;
-    my $pkg_info = $caller_pkg->oy_pkg();
+    my $pkg_info = oy_pkg($caller_pkg);
     for ( my $i = 0; $i <= $#_; $i++ ) {
         if (ref($_[$i]) eq 'HASH' ) {
             oy_pkg( $caller_pkg, %{ splice @_, $i, 1 }  );
